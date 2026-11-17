@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import ssl
 import urllib.parse
 import urllib.request
 from typing import Callable, Iterable, Optional
@@ -18,10 +20,30 @@ RETRIES = 2
 Fetcher = Callable[[str], str]
 
 
+_SYSTEM_CA_FILES = ("/etc/ssl/cert.pem", "/etc/ssl/certs/ca-certificates.crt")
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """python.org 배포판 Python은 기본 CA 번들이 없어 certifi 또는 시스템 번들로 대체한다."""
+    ctx = ssl.create_default_context()
+    if ctx.cert_store_stats()["x509_ca"] or os.environ.get("SSL_CERT_FILE"):
+        return ctx
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        pass
+    for path in _SYSTEM_CA_FILES:
+        if os.path.exists(path):
+            return ssl.create_default_context(cafile=path)
+    return ctx
+
+
 def http_fetch(url: str) -> str:
     url = urllib.parse.quote(url, safe=":/?&=+%@,;")
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=TIMEOUT_SEC) as resp:
+    with urllib.request.urlopen(req, timeout=TIMEOUT_SEC, context=_ssl_context()) as resp:
         return resp.read().decode("utf-8")
 
 
