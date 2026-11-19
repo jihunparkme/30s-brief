@@ -22,6 +22,7 @@
 │   └── work-order.md          # 작업 순서 및 Jira 키 매핑
 ├── pipeline/                  # Python 수집·요약 배치
 │   ├── collector/             # RSS 수집기 (models, sources, adapters, collector, __main__)
+│   ├── summarizer/            # Gemini Flash 요약 클라이언트 (schema, client)
 │   └── tests/                 # unittest 기반 테스트
 ├── supabase/
 │   └── migrations/            # SQL 마이그레이션 (briefings / issues / system_logs)
